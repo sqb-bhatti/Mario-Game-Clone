@@ -6,6 +6,7 @@
 using namespace std;
 using namespace sf;
 
+
 int main()
 {
     static bool fullscreen = true;
