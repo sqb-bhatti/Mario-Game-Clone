@@ -1,6 +1,8 @@
 
 
 #include<iostream>
+#include <sstream>  // the sstream class adds some really useful functionality for combining Strings and other
+                    // variable types into a String.
 #include <SFML/Graphics.hpp>
 
 using namespace std;
@@ -95,6 +97,50 @@ int main()
     // Variables to control time itself
     Clock clock;
 
+    // Track whether the game is running
+    bool paused = true;
+
+
+    // Draw some text
+    int score = 0;
+
+    Text messageText;
+    Text scoreText;
+
+    // We need to choose a font
+    Font font;
+    font.loadFromFile("fonts/KOMIKAP_.ttf");
+
+    // Set the font to our message
+    messageText.setFont(font);
+    scoreText.setFont(font);
+
+    // Assign the actual message
+    messageText.setString("Press Enter to start!");
+    scoreText.setString("Score = 0");
+
+    // Make it really big
+    messageText.setCharacterSize(75);
+    scoreText.setCharacterSize(100);
+
+    // Choose a color
+    messageText.setFillColor(Color::White);
+    scoreText.setFillColor(Color::White);
+
+    // Position the text.
+    // remember that the origin of everything we draw is at the top left-hand corner. So, if we simply divide the
+    // screen width and height by two and use the results in mesageText.setPosition..., then the top left of the text
+    // will be in the center of the screen and it will spread out untidily to the right.
+
+    FloatRect textRect = messageText.getLocalBounds(); // getLocalBounds function returns the coordinates of the
+    // rectangle that wraps messageText.
+
+    // What the code does is set the center of messageText to the center of the screen
+    messageText.setOrigin(textRect.left + textRect.width / 2.0f, textRect.top + textRect.height / 2.0f);
+    messageText.setPosition(1920 / 2.0f, 1080 / 2.0f);
+    scoreText.setPosition(20, 20);
+//    messageText.setPosition(1920 / 2.0f, 1080 / 2.0f);
+
     while (window.isOpen())
     {
         /*
@@ -107,112 +153,128 @@ int main()
         {
             if (event.type == Event::Closed)
                 window.close();
-            if (event.type == Event::KeyPressed)
-            {
-                window.create(fullscreen ? VideoMode::getFullscreenModes()[0] : VideoMode(1920, 1080), "Non-zombie window");
-                fullscreen = !fullscreen;
+//            if (event.type == Event::KeyPressed)
+//            {
+//                window.create(fullscreen ? VideoMode::getFullscreenModes()[0] : VideoMode(1920, 1080), "Non-zombie window");
+//                fullscreen = !fullscreen;
+//            }
+
+            // Start the game
+            if (Keyboard::isKeyPressed(Keyboard::Return)) {
+                paused = false;
             }
+
 
             /*
              ****************************************
              Update the scene
              ****************************************
              */
-            // Measure time
-            Time dt = clock.restart();  // it returns the amount of time that has elapsed since the last time we restarted the clock.
 
-            // Setup the bee
-            if (!beeActive) {  // We only want to do this when the bee is inactive.
-                // How fast is the bee
-                srand((int)time(0));
-                beeSpeed = (rand() % 30) + 200;  // Get a random number between 200 and 399
+            if (!paused) {
+                // Measure time
+                Time dt = clock.restart();  // it returns the amount of time that has elapsed since the last time we
+                // restarted the clock.
 
-                // How high is the bee
-                srand((int)time(0) * 10);
-                float height = (rand() % 500) + 500;  // Get a random number between 500 and 999
-                spriteBee.setPosition(2000, height);
-                beeActive = true;
-            } else {
-                // Move the bee
-                spriteBee.setPosition(spriteBee.getPosition().x - (beeSpeed * dt.asSeconds()),
-                                      spriteBee.getPosition().y);
+                // Setup the bee
+                if (!beeActive) {  // We only want to do this when the bee is inactive.
+                    // How fast is the bee
+                    srand((int)time(0));
+                    beeSpeed = (rand() % 50) + 200;  // Get a random number between 200 and 399
 
-                // Has the bee reached the left-hand edge of the screen?
-                // If the getPosition function returns less than -100, it will certainly be out of view of the player.
-                // When this occurs, beeActive is set to false and, on the next frame, a "new" bee will be set flying
-                // at a new random height and a new random speed.
-                if (spriteBee.getPosition().x < -100) {
-                    // Set it up ready to be a whole new bee next frame
-                    beeActive = false;
+                    // How high is the bee
+                    srand((int)time(0) * 10);
+                    float height = (rand() % 500) + 500;  // Get a random number between 500 and 999
+                    spriteBee.setPosition(2000, height);
+                    beeActive = true;
+                } else {
+                    // Move the bee
+                    spriteBee.setPosition(spriteBee.getPosition().x - (beeSpeed * dt.asSeconds()),
+                                          spriteBee.getPosition().y);
+
+                    // Has the bee reached the left-hand edge of the screen?
+                    // If the getPosition function returns less than -100, it will certainly be out of view of the player.
+                    // When this occurs, beeActive is set to false and, on the next frame, a "new" bee will be set flying
+                    // at a new random height and a new random speed.
+                    if (spriteBee.getPosition().x < -100) {
+                        // Set it up ready to be a whole new bee next frame
+                        beeActive = false;
+                    }
                 }
-            }
 
-            // Manage the clouds
-            // Cloud 1
-            if (!cloud1Active) {
-                // How fast is the cloud
-                srand((int)time(0) * 10);
-                cloud1Speed = (rand() % 30);
+                // Manage the clouds
+                // Cloud 1
+                if (!cloud1Active) {
+                    // How fast is the cloud
+                    srand((int)time(0) * 10);
+                    cloud1Speed = (rand() % 50);
 
-                // How high is the cloud
-                srand((int)time(0) * 10);
-                float height = (rand() % 150);
-                spriteCloud1.setPosition(-200, height);
-                cloud1Active = true;
-            } else {
-                spriteCloud1.setPosition(spriteCloud1.getPosition().x + (cloud1Speed * dt.asSeconds()),
-                                         spriteCloud1.getPosition().y);
+                    // How high is the cloud
+                    srand((int)time(0) * 10);
+                    float height = (rand() % 150);
+                    spriteCloud1.setPosition(-200, height);
+                    cloud1Active = true;
+                } else {
+                    spriteCloud1.setPosition(spriteCloud1.getPosition().x + (cloud1Speed * dt.asSeconds()),
+                                             spriteCloud1.getPosition().y);
 
-                // Has the cloud reached the right hand edge of the screen?
-                if (spriteCloud1.getPosition().x > 1920) {
-                    // Set it up ready to be a whole new cloud next frame
-                    cloud1Active = false;
+                    // Has the cloud reached the right hand edge of the screen?
+                    if (spriteCloud1.getPosition().x > 1920) {
+                        // Set it up ready to be a whole new cloud next frame
+                        cloud1Active = false;
+                    }
                 }
-            }
 
-            // Cloud 2
-            if (!cloud2Active) {
-                // How fast is the cloud
-                srand((int)time(0) * 20);
-                cloud2Speed = (rand() % 30);
+                // Cloud 2
+                if (!cloud2Active) {
+                    // How fast is the cloud
+                    srand((int)time(0) * 20);
+                    cloud2Speed = (rand() % 50);
 
-                // How high is the cloud
-                srand((int)time(0) * 20);
-                float height = (rand() % 300) - 150;
-                spriteCloud2.setPosition(-200, height);
-                cloud2Active = true;
-            } else {
-                spriteCloud2.setPosition(spriteCloud2.getPosition().x + (cloud2Speed * dt.asSeconds()),
-                                         spriteCloud2.getPosition().y);
+                    // How high is the cloud
+                    srand((int)time(0) * 20);
+                    float height = (rand() % 300) - 150;
+                    spriteCloud2.setPosition(-200, height);
+                    cloud2Active = true;
+                } else {
+                    spriteCloud2.setPosition(spriteCloud2.getPosition().x + (cloud2Speed * dt.asSeconds()),
+                                             spriteCloud2.getPosition().y);
 
-                // Has the cloud reached the right hand edge of the screen?
-                if (spriteCloud2.getPosition().x > 1920) {
-                    // Set it up ready to be a whole new cloud next frame
-                    cloud2Active = false;
+                    // Has the cloud reached the right hand edge of the screen?
+                    if (spriteCloud2.getPosition().x > 1920) {
+                        // Set it up ready to be a whole new cloud next frame
+                        cloud2Active = false;
+                    }
                 }
-            }
 
-            // Cloud 3
-            if (!cloud3Active) {
-                // How fast is the cloud
-                srand((int)time(0) * 30);
-                cloud3Speed = (rand() % 30);
+                // Cloud 3
+                if (!cloud3Active) {
+                    // How fast is the cloud
+                    srand((int)time(0) * 30);
+                    cloud3Speed = (rand() % 50);
 
-                // How high is the cloud
-                srand((int)time(0) * 30);
-                float height = (rand() % 450) - 150;
-                spriteCloud3.setPosition(-200, height);
-                cloud3Active = true;
-            } else {
-                spriteCloud3.setPosition(spriteCloud3.getPosition().x + (cloud3Speed * dt.asSeconds()),
-                                         spriteCloud3.getPosition().y);
+                    // How high is the cloud
+                    srand((int)time(0) * 30);
+                    float height = (rand() % 450) - 150;
+                    spriteCloud3.setPosition(-200, height);
+                    cloud3Active = true;
+                } else {
+                    spriteCloud3.setPosition(spriteCloud3.getPosition().x + (cloud3Speed * dt.asSeconds()),
+                                             spriteCloud3.getPosition().y);
 
-                // Has the cloud reached the right hand edge of the screen?
-                if (spriteCloud3.getPosition().x > 1920) {
-                    // Set it up ready to be a whole new cloud next frame
-                    cloud3Active = false;
+                    // Has the cloud reached the right hand edge of the screen?
+                    if (spriteCloud3.getPosition().x > 1920) {
+                        // Set it up ready to be a whole new cloud next frame
+                        cloud3Active = false;
+                    }
                 }
-            }
+                // Update the score text
+                stringstream ss;
+                ss<< "Score = " << score;
+                scoreText.setString(ss.str()); // This line of code simply sets the String contained in ss to scoreText:
+
+            } // End if(!paused)
+
 
 
             /*
@@ -239,6 +301,15 @@ int main()
 
         // Draw the insect
         window.draw(spriteBee);
+
+        // Draw the score
+        window.draw(scoreText);
+
+        // This if statement causes messageText to only be drawn when the game is paused.
+        if (paused) {
+            // Draw our message
+            window.draw(messageText);
+        }
 
 
         // Show everything we just drew
