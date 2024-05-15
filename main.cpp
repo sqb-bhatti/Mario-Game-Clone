@@ -4,6 +4,7 @@
 #include <sstream>  // the sstream class adds some really useful functionality for combining Strings and other
                     // variable types into a String.
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
 
 using namespace std;
 using namespace sf;
@@ -175,6 +176,72 @@ int main()
     }
 
 
+    // Prepare the player
+    Texture texturePlayer;
+    texturePlayer.loadFromFile("graphics/player.png");
+    Sprite spritePlayer;
+    spritePlayer.setTexture(texturePlayer);
+    spritePlayer.setPosition(580, 720);
+
+    // The player starts on the left
+    side playerSide = side::LEFT;  // playerSide, to keep track of where the player is currently standing.(Left/Right)
+
+    // Prepare the gravestone
+    Texture textureRIP;
+    textureRIP.loadFromFile("graphics/rip.png");
+    Sprite spriteRIP;
+    spriteRIP.setTexture(textureRIP);
+    spriteRIP.setPosition(600, 860);
+
+    // Prepare the axe
+    Texture textureAxe;
+    textureAxe.loadFromFile("graphics/axe.png");
+    Sprite spriteAxe;
+    spriteAxe.setTexture(textureAxe);
+    spriteAxe.setPosition(700, 830);
+
+    // Line the axe up with the tree. Determine the horizontal position the axe will be drawn at, depending on whether
+    // the player is on the left-or right-hand side of the tree.
+    const float AXE_POSITION_LEFT = 700;
+    const float AXE_POSITION_RIGHT = 1075;
+
+    // Prepare the flying log
+    Texture textureLog;
+    textureLog.loadFromFile("graphics/log.png");
+    Sprite spriteLog;
+    spriteLog.setTexture(textureLog);
+    spriteLog.setPosition(810, 720);
+
+    // Some other useful log related variables
+    bool logActive = false;
+    float logSpeedX = 1000;
+    float logSpeedY = -1500;
+
+    // Control the player input
+    bool acceptInput = false; // will be used to determine when to listen for chops and when to ignore them
+
+
+    /*
+     SFML plays sound effects using two different classes. The first class is the SoundBuffer class. This is the class
+     that holds the actual audio data from the sound file. It is SoundBuffer that is responsible for loading the .wav
+     files into the PC's RAM in a format that can be played without any further decoding work.
+
+     Once we have a SoundBuffer object with our sound stored in it, we will then create another object of the Sound
+     type. We can then associate this Sound object with a SoundBuffer object. Then, at the appropriate moment in our
+     code, we will be able to call the play function of the appropriate Sound object.
+     */
+    // Prepare the sounds
+    // The player chopping sound
+    SoundBuffer chopBuffer;
+    chopBuffer.loadFromFile("sound/chop.wav");
+    Sound chop;
+    chop.setBuffer(chopBuffer);
+
+    // The player has met his end under a branch
+    SoundBuffer deathBuffer;
+    deathBuffer.loadFromFile("sound/death.wav");
+    Sound death;
+    death.setBuffer(deathBuffer);
 
     while (window.isOpen())
     {
@@ -186,6 +253,15 @@ int main()
         Event event;
         while (window.pollEvent(event))
         {
+            // The following code uses the method of detecting when a key is released.
+            // executes when both a key has been released and the game is not paused.
+            if (event.type == Event::KeyReleased && !paused) {
+                // Listen for key presses again
+                acceptInput = true;
+
+                // hide the axe
+                spriteAxe.setPosition(2000, spriteAxe.getPosition().y);
+            }
             if (event.type == Event::Closed)
                 window.close();
 //            if (event.type == Event::KeyPressed)
@@ -200,8 +276,70 @@ int main()
 
                 // Reset the time and the score
                 score = 0;
+
+                // Make all the branches disappear - we are using a for loop to prepare the tree with no branches.
+                // This is fair to the player because, if the game started with a branch right above their head,
+                // it would be considered unsporting.
+                for (int i = 1; i < NUM_BRANCHES; i++) {
+                    branchPositions[i] = side::NONE;
+                }
+
+                // Make sure the gravestone is hidden
+                spriteRIP.setPosition(675, 2000);
+
+                // Move the player into position
+                spritePlayer.setPosition(580, 720);
+
+                acceptInput = true;  // We are now ready to receive chopping key presses.
             }
 
+            // Wrap the player controls to Make sure we are accepting input
+            if (acceptInput) {
+                // what happens when the player presses the right cursor key on the keyboard
+                if (Keyboard::isKeyPressed(Keyboard::Right)) {
+                    // Make sure the player is on the right
+                    playerSide = side::RIGHT;
+                    score ++;
+                    spriteAxe.setPosition(AXE_POSITION_RIGHT, spriteAxe.getPosition().y);
+                    spritePlayer.setPosition(1200, 720);
+
+                    // Update the branches to move all the branches down one place and spawn a new random branch
+                    // (or space) at the top of the tree.
+                    updateBranches(score);
+
+                    // Set the log flying to the left
+                    spriteLog.setPosition(810, 720);
+                    logSpeedX = -5000;
+                    logActive = true;
+
+                    acceptInput = false;
+
+                    // Play a chop sound
+                    chop.play();
+                }
+
+                // Handle the left cursor key
+                if (Keyboard::isKeyPressed(Keyboard::Left)) {
+                    // Make sure the player is on the left
+                    playerSide = side::LEFT;
+                    score++;
+                    spriteAxe.setPosition(AXE_POSITION_LEFT, spriteAxe.getPosition().y);
+                    spritePlayer.setPosition(580, 720);
+
+                    // update the branches
+                    updateBranches(score);
+
+                    // Set the log flying
+                    spriteLog.setPosition(810, 720);
+                    logSpeedX = 5000;
+                    logActive = true;
+
+                    acceptInput = false;
+
+                    // Play a chop sound
+                    chop.play();
+                }
+            }
 
             /*
              ****************************************
@@ -335,6 +473,47 @@ int main()
                     }
                 }
 
+                // Handle a flying log
+                if (logActive) {
+                    spriteLog.setPosition(spriteLog.getPosition().x + (logSpeedX * dt.asSeconds()),
+                                          spriteLog.getPosition().y + (logSpeedY * dt.asSeconds()));
+
+                    // Has the log reached the right hand edge?
+                    if (spriteLog.getPosition().x < -100 || spriteLog.getPosition().x > 2000) {
+                        // Set it up ready to be a whole new log next frame
+                        logActive = false;
+                        spriteLog.setPosition(810, 720);
+                    }
+                }
+
+                // Detecting the player getting squashed is really simple. All we want to know is: does the last
+                // branch in the branchPositions array equal playerSide? If it does, the player is dead.
+                // has the player been squished by a branch?
+                if (branchPositions[5] == playerSide) {
+                    // death
+                    paused = true;
+                    acceptInput = false;
+
+                    // Draw the gravestone
+                    spriteRIP.setPosition(525, 760);
+
+                    // hide the player
+                    spritePlayer.setPosition(2000, 660);
+
+                    // Change the text of the message
+                    messageText.setString("SQUISHED!!");
+
+                    // Center it on the screen
+                    FloatRect textRect = messageText.getLocalBounds();
+                    messageText.setOrigin(textRect.left + textRect.width / 2.0f,
+                                          textRect.top + textRect.height / 2.0f);
+
+                    messageText.setPosition(1920 / 2.0f, 1080 / 2.0f);
+
+                    // Play a death sound
+                    death.play();
+                }
+
             } // End if(!paused)
 
 
@@ -365,7 +544,19 @@ int main()
         // Draw the tree
         window.draw(spriteTree);
 
-        // Draw the insect
+        // Draw the player
+        window.draw(spritePlayer);
+
+        // Draw the axe
+        window.draw(spriteAxe);
+
+        // Draw the flying log
+        window.draw(spriteLog);
+
+        // Draw the gravestone
+        window.draw(spriteRIP);
+
+        // Draw the bee
         window.draw(spriteBee);
 
         // Draw the score
