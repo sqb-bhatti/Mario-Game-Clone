@@ -61,9 +61,18 @@ int main()
     // Make a tree sprite
     Texture textureTree;
     textureTree.loadFromFile("graphics/tree.png");
-    Sprite spriteTree;
-    spriteTree.setTexture(textureTree);
-    spriteTree.setPosition(810, 0);
+
+    Sprite spriteTree1;
+    Sprite spriteTree2;
+    Sprite spriteTree3;
+
+    spriteTree1.setTexture(textureTree);
+    spriteTree2.setTexture(textureTree);
+    spriteTree3.setTexture(textureTree);
+
+    spriteTree1.setPosition(810, 0);
+    spriteTree2.setPosition(210, -200);
+    spriteTree3.setPosition(1200, -200);
 
 
     // Prepare the bee
@@ -541,8 +550,10 @@ int main()
         for (int i = 0; i < NUM_BRANCHES; i++) {
             window.draw(branches[i]);
         }
-        // Draw the tree
-        window.draw(spriteTree);
+        // Draw the trees
+        window.draw(spriteTree1);
+        window.draw(spriteTree2);
+        window.draw(spriteTree3);
 
         // Draw the player
         window.draw(spritePlayer);
