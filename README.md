@@ -1,2 +1,2 @@
-# Timber-Game
-2D Game using SFML and C++
+# Mario Game Clone
+Famous Mario Game clone using SFML and C++.
